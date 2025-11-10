@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/mytheresa/go-hiring-challenge/models"
@@ -11,10 +12,18 @@ import (
 // This interface allows the handler to depend on behavior rather than concrete implementation
 type ProductsReader interface {
 	GetAllProducts() ([]models.Product, error)
+	GetProductsWithPagination(offset, limit int) ([]models.Product, int64, error)
 }
 
 type Response struct {
 	Products []Product `json:"products"`
+}
+
+type PaginatedResponse struct {
+	Products []Product `json:"products"`
+	Total    int64     `json:"total"`
+	Offset   int       `json:"offset"`
+	Limit    int       `json:"limit"`
 }
 
 type Product struct {
@@ -39,7 +48,22 @@ func NewCatalogHandler(r ProductsReader) *CatalogHandler {
 }
 
 func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
-	res, err := h.repo.GetAllProducts()
+	// Parse and validate pagination parameters
+	offset := parseIntParam(r.URL.Query().Get("offset"), 0)
+	if offset < 0 {
+		offset = 0
+	}
+
+	limit := parseIntParam(r.URL.Query().Get("limit"), 10)
+	if limit < 1 {
+		limit = 1
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
+	// Get paginated products
+	res, total, err := h.repo.GetProductsWithPagination(offset, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -66,12 +90,27 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Return the products as a JSON response
 	w.Header().Set("Content-Type", "application/json")
 
-	response := Response{
+	response := PaginatedResponse{
 		Products: products,
+		Total:    total,
+		Offset:   offset,
+		Limit:    limit,
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+// parseIntParam parses a string parameter to int, returning defaultValue if parsing fails
+func parseIntParam(param string, defaultValue int) int {
+	if param == "" {
+		return defaultValue
+	}
+	var value int
+	if _, err := fmt.Sscanf(param, "%d", &value); err != nil {
+		return defaultValue
+	}
+	return value
 }

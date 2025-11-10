@@ -21,3 +21,20 @@ func (r *ProductsRepository) GetAllProducts() ([]Product, error) {
 	}
 	return products, nil
 }
+
+func (r *ProductsRepository) GetProductsWithPagination(offset, limit int) ([]Product, int64, error) {
+	var products []Product
+	var total int64
+
+	// Get total count
+	if err := r.db.Model(&Product{}).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated products
+	if err := r.db.Offset(offset).Limit(limit).Preload("Category").Preload("Variants").Find(&products).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return products, total, nil
+}
