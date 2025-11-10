@@ -12,7 +12,7 @@ import (
 // This interface allows the handler to depend on behavior rather than concrete implementation
 type ProductsReader interface {
 	GetAllProducts() ([]models.Product, error)
-	GetProductsWithPagination(offset, limit int) ([]models.Product, int64, error)
+	GetProductsWithPagination(offset, limit int, category string, priceLessThan *float64) ([]models.Product, int64, error)
 }
 
 type Response struct {
@@ -62,8 +62,19 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
-	// Get paginated products
-	res, total, err := h.repo.GetProductsWithPagination(offset, limit)
+	// Parse filter parameters
+	category := r.URL.Query().Get("category")
+
+	var priceLessThan *float64
+	if priceLessThanStr := r.URL.Query().Get("priceLessThan"); priceLessThanStr != "" {
+		var price float64
+		if _, err := fmt.Sscanf(priceLessThanStr, "%f", &price); err == nil && price > 0 {
+			priceLessThan = &price
+		}
+	}
+
+	// Get paginated products with filters
+	res, total, err := h.repo.GetProductsWithPagination(offset, limit, category, priceLessThan)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
