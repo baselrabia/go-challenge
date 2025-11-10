@@ -7,6 +7,12 @@ import (
 	"github.com/mytheresa/go-hiring-challenge/models"
 )
 
+// ProductsReader interface for fetching products
+// This interface allows the handler to depend on behavior rather than concrete implementation
+type ProductsReader interface {
+	GetAllProducts() ([]models.Product, error)
+}
+
 type Response struct {
 	Products []Product `json:"products"`
 }
@@ -17,10 +23,10 @@ type Product struct {
 }
 
 type CatalogHandler struct {
-	repo *models.ProductsRepository
+	repo ProductsReader
 }
 
-func NewCatalogHandler(r *models.ProductsRepository) *CatalogHandler {
+func NewCatalogHandler(r ProductsReader) *CatalogHandler {
 	return &CatalogHandler{
 		repo: r,
 	}
