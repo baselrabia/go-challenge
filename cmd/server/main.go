@@ -11,6 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/mytheresa/go-hiring-challenge/app/catalog"
+	"github.com/mytheresa/go-hiring-challenge/app/category"
 	"github.com/mytheresa/go-hiring-challenge/app/database"
 	"github.com/mytheresa/go-hiring-challenge/models"
 )
@@ -34,15 +35,24 @@ func main() {
 	)
 	defer close()
 
-	// Initialize repository, service, and handlers
+	// Initialize repositories
 	prodRepo := models.NewProductsRepository(db)
+	catRepo := models.NewCategoriesRepository(db)
+
+	// Initialize services
 	catalogService := catalog.NewCatalogService(prodRepo)
-	cat := catalog.NewCatalogHandler(catalogService)
+	categoriesService := category.NewCategoriesService(catRepo)
+
+	// Initialize handlers
+	catalogHandler := catalog.NewCatalogHandler(catalogService)
+	categoriesHandler := category.NewCategoriesHandler(categoriesService)
 
 	// Set up routing
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /catalog", cat.HandleGet)
-	mux.HandleFunc("GET /catalog/{code}", cat.HandleGetByCode)
+	mux.HandleFunc("GET /catalog", catalogHandler.HandleGet)
+	mux.HandleFunc("GET /catalog/{code}", catalogHandler.HandleGetByCode)
+	mux.HandleFunc("GET /categories", categoriesHandler.HandleList)
+	mux.HandleFunc("POST /categories", categoriesHandler.HandleCreate)
 
 	// Set up the HTTP server
 	srv := &http.Server{
