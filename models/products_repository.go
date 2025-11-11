@@ -52,3 +52,11 @@ func (r *ProductsRepository) GetProductsWithPagination(offset, limit int, catego
 
 	return products, total, nil
 }
+
+func (r *ProductsRepository) GetProductByCode(code string) (*Product, error) {
+	var product Product
+	if err := r.db.Where("code = ?", code).Preload("Category").Preload("Variants").First(&product).Error; err != nil {
+		return nil, err
+	}
+	return &product, nil
+}

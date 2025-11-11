@@ -5,56 +5,29 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mytheresa/go-hiring-challenge/models"
+	"github.com/mytheresa/go-hiring-challenge/app/utils"
 )
 
-// ProductsReader interface for fetching products
-// This interface allows the handler to depend on behavior rather than concrete implementation
-type ProductsReader interface {
-	GetAllProducts() ([]models.Product, error)
-	GetProductsWithPagination(offset, limit int, category string, priceLessThan *float64) ([]models.Product, int64, error)
-}
-
-type Response struct {
-	Products []Product `json:"products"`
-}
-
-type PaginatedResponse struct {
-	Products []Product `json:"products"`
-	Total    int64     `json:"total"`
-	Offset   int       `json:"offset"`
-	Limit    int       `json:"limit"`
-}
-
-type Product struct {
-	Code     string    `json:"code"`
-	Price    float64   `json:"price"`
-	Category *Category `json:"category,omitempty"`
-}
-
-type Category struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
-}
-
+// CatalogHandler handles HTTP requests for the catalog endpoints
 type CatalogHandler struct {
-	repo ProductsReader
+	service *CatalogService
 }
 
-func NewCatalogHandler(r ProductsReader) *CatalogHandler {
+// NewCatalogHandler creates a new catalog handler
+func NewCatalogHandler(service *CatalogService) *CatalogHandler {
 	return &CatalogHandler{
-		repo: r,
+		service: service,
 	}
 }
 
 func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 	// Parse and validate pagination parameters
-	offset := parseIntParam(r.URL.Query().Get("offset"), 0)
+	offset := utils.ParseIntParam(r.URL.Query().Get("offset"), 0)
 	if offset < 0 {
 		offset = 0
 	}
 
-	limit := parseIntParam(r.URL.Query().Get("limit"), 10)
+	limit := utils.ParseIntParam(r.URL.Query().Get("limit"), 10)
 	if limit < 1 {
 		limit = 1
 	}
@@ -73,55 +46,40 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Get paginated products with filters
-	res, total, err := h.repo.GetProductsWithPagination(offset, limit, category, priceLessThan)
+	// Call service to get products
+	response, err := h.service.ListProducts(offset, limit, category, priceLessThan)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	products := make([]Product, len(res))
-	for i, p := range res {
-		product := Product{
-			Code:  p.Code,
-			Price: p.Price.InexactFloat64(),
-		}
-
-		// Include category if available
-		if p.Category != nil {
-			product.Category = &Category{
-				Code: p.Category.Code,
-				Name: p.Category.Name,
-			}
-		}
-
-		products[i] = product
-	}
-
-	// Return the products as a JSON response
+	// Return JSON response
 	w.Header().Set("Content-Type", "application/json")
-
-	response := PaginatedResponse{
-		Products: products,
-		Total:    total,
-		Offset:   offset,
-		Limit:    limit,
-	}
-
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-// parseIntParam parses a string parameter to int, returning defaultValue if parsing fails
-func parseIntParam(param string, defaultValue int) int {
-	if param == "" {
-		return defaultValue
+func (h *CatalogHandler) HandleGetByCode(w http.ResponseWriter, r *http.Request) {
+	// Extract product code from URL path
+	code := r.PathValue("code")
+	if code == "" {
+		http.Error(w, "Product code is required", http.StatusBadRequest)
+		return
 	}
-	var value int
-	if _, err := fmt.Sscanf(param, "%d", &value); err != nil {
-		return defaultValue
+
+	// Call service to get product details
+	response, err := h.service.GetProductDetails(code)
+	if err != nil {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
 	}
-	return value
+
+	// Return JSON response
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
