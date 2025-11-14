@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOKResponse(t *testing.T) {
+func TestSuccessResponse(t *testing.T) {
 
 	type sampleResponse struct {
 		Message string `json:"message"`
@@ -18,12 +18,33 @@ func TestOKResponse(t *testing.T) {
 
 	t.Run("succesful http200 json response", func(t *testing.T) {
 		recorder := httptest.NewRecorder()
-		OKResponse(recorder, sample)
+		SuccessResponse(recorder, sample)
 
 		assert.Equal(t, http.StatusOK, recorder.Code, "Expected status code 200 OK")
 		assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"), "Expected Content-Type to be application/json")
 
 		expected := `{"message":"Success"}`
+		assert.JSONEq(t, expected, recorder.Body.String(), "Response body does not match expected")
+	})
+}
+
+func TestCreatedResponse(t *testing.T) {
+
+	type sampleResponse struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+
+	sample := sampleResponse{ID: 1, Name: "Test"}
+
+	t.Run("successful http201 json response", func(t *testing.T) {
+		recorder := httptest.NewRecorder()
+		CreatedResponse(recorder, sample)
+
+		assert.Equal(t, http.StatusCreated, recorder.Code, "Expected status code 201 Created")
+		assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"), "Expected Content-Type to be application/json")
+
+		expected := `{"id":1,"name":"Test"}`
 		assert.JSONEq(t, expected, recorder.Body.String(), "Response body does not match expected")
 	})
 }
