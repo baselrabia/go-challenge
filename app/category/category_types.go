@@ -1,25 +1,32 @@
 package category
 
-import "github.com/mytheresa/go-hiring-challenge/models"
+import (
+	"errors"
 
-// CategoriesReader interface for fetching and creating categories
+	"github.com/mytheresa/go-hiring-challenge/models"
+)
+
+var (
+	ErrCategoryCodeRequired = errors.New("category code is required")
+	ErrCategoryNameRequired = errors.New("category name is required")
+	ErrCategoryCodeTooLong  = errors.New("category code must not exceed 32 characters")
+	ErrCategoryNameTooLong  = errors.New("category name must not exceed 256 characters")
+)
+
 type CategoriesReader interface {
 	GetAllCategories() ([]models.Category, error)
 	CreateCategory(category *models.Category) error
 }
 
-// CategoryResponse represents a category in the API response
 type CategoryResponse struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
 }
 
-// CategoriesListResponse represents the list of categories response
 type CategoriesListResponse struct {
 	Categories []CategoryResponse `json:"categories"`
 }
 
-// CreateCategoryRequest represents the request body for creating a category
 type CreateCategoryRequest struct {
 	Code string `json:"code"`
 	Name string `json:"name"`
