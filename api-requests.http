@@ -1,0 +1,122 @@
+### Variables
+@baseUrl = http://localhost:8484
+
+### ====================================
+### CATALOG ENDPOINTS
+### ====================================
+
+### Get all products (default pagination)
+GET {{baseUrl}}/catalog
+Content-Type: application/json
+
+### Get products with pagination
+GET {{baseUrl}}/catalog?offset=2&limit=3
+Content-Type: application/json
+
+### Get products by category (SHOES)
+GET {{baseUrl}}/catalog?category=SHOES
+Content-Type: application/json
+
+### Get products by category (CLOTHING)
+GET {{baseUrl}}/catalog?category=CLOTHING
+Content-Type: application/json
+
+### Get products by category (ACCESSORIES)
+GET {{baseUrl}}/catalog?category=ACCESSORIES
+Content-Type: application/json
+
+### Get products with price filter (less than $10)
+GET {{baseUrl}}/catalog?priceLessThan=10
+Content-Type: application/json
+
+### Get products with combined filters
+GET {{baseUrl}}/catalog?category=CLOTHING&priceLessThan=20&limit=5
+Content-Type: application/json
+
+### Get products with accessories under $10
+GET {{baseUrl}}/catalog?category=ACCESSORIES&priceLessThan=10
+Content-Type: application/json
+
+### ====================================
+### PRODUCT DETAILS ENDPOINTS
+### ====================================
+
+### Get product details - PROD001
+GET {{baseUrl}}/catalog/PROD001
+Content-Type: application/json
+
+### Get product details - PROD002
+GET {{baseUrl}}/catalog/PROD002
+Content-Type: application/json
+
+### Get product details - PROD003
+GET {{baseUrl}}/catalog/PROD003
+Content-Type: application/json
+
+### Get product details - Invalid code (404)
+GET {{baseUrl}}/catalog/INVALID
+Content-Type: application/json
+
+### ====================================
+### CATEGORIES ENDPOINTS
+### ====================================
+
+### List all categories
+GET {{baseUrl}}/categories
+Content-Type: application/json
+
+### Create new category
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "code": "ELECTRONICS",
+  "name": "Electronics"
+}
+
+### Create new category - Books
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "code": "BOOKS",
+  "name": "Books"
+}
+
+### ====================================
+### VALIDATION TESTS
+### ====================================
+
+### Create category with empty code (400)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "code": "",
+  "name": "Empty Code"
+}
+
+### Create category with empty name (400)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "code": "BOOKS",
+  "name": ""
+}
+
+### Create category with code too long (400)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+{
+  "code": "VERYLONGCATEGORYCODEEXCEEDINGTHIRTYTWOCHARACTERSLIMIT",
+  "name": "Test"
+}
+
+### Create category with invalid JSON (400)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+
+invalid json
+
