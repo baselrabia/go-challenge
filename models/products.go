@@ -4,8 +4,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// Product represents a product in the catalog.
-// It includes a unique code, a price, and a category.
 type Product struct {
 	ID         uint            `gorm:"primaryKey"`
 	Code       string          `gorm:"uniqueIndex;not null"`

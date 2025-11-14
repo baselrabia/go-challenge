@@ -26,26 +26,23 @@ func (r *ProductsRepository) GetProductsWithPagination(offset, limit int, catego
 	var products []Product
 	var total int64
 
-	// Build query with filters
 	query := r.db.Model(&Product{})
 
-	// Apply category filter
+	// category filter
 	if category != "" {
 		query = query.Joins("JOIN categories ON categories.id = products.category_id").
 			Where("categories.code = ?", category)
 	}
 
-	// Apply price filter
+	// price filter
 	if priceLessThan != nil {
 		query = query.Where("products.price < ?", *priceLessThan)
 	}
 
-	// Get total count with filters
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated products with filters
 	if err := query.Offset(offset).Limit(limit).Preload("Category").Preload("Variants").Find(&products).Error; err != nil {
 		return nil, 0, err
 	}
