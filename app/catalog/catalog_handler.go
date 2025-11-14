@@ -1,19 +1,17 @@
 package catalog
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/mytheresa/go-hiring-challenge/app/api"
 	"github.com/mytheresa/go-hiring-challenge/app/utils"
 )
 
-// CatalogHandler handles HTTP requests for the catalog endpoints
 type CatalogHandler struct {
 	service *CatalogService
 }
 
-// NewCatalogHandler creates a new catalog handler
 func NewCatalogHandler(service *CatalogService) *CatalogHandler {
 	return &CatalogHandler{
 		service: service,
@@ -21,7 +19,6 @@ func NewCatalogHandler(service *CatalogService) *CatalogHandler {
 }
 
 func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
-	// Parse and validate pagination parameters
 	offset := utils.ParseIntParam(r.URL.Query().Get("offset"), 0)
 	if offset < 0 {
 		offset = 0
@@ -35,7 +32,6 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
-	// Parse filter parameters
 	category := r.URL.Query().Get("category")
 
 	var priceLessThan *float64
@@ -46,40 +42,27 @@ func (h *CatalogHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Call service to get products
 	response, err := h.service.ListProducts(offset, limit, category, priceLessThan)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		api.ErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Return JSON response
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	api.SuccessResponse(w, response)
 }
 
 func (h *CatalogHandler) HandleGetByCode(w http.ResponseWriter, r *http.Request) {
-	// Extract product code from URL path
 	code := r.PathValue("code")
 	if code == "" {
-		http.Error(w, "Product code is required", http.StatusBadRequest)
+		api.ErrorResponse(w, http.StatusBadRequest, "Product code is required")
 		return
 	}
 
-	// Call service to get product details
 	response, err := h.service.GetProductDetails(code)
 	if err != nil {
-		http.Error(w, "Product not found", http.StatusNotFound)
+		api.ErrorResponse(w, http.StatusNotFound, "Product not found")
 		return
 	}
 
-	// Return JSON response
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	api.SuccessResponse(w, response)
 }
